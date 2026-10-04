@@ -1,0 +1,20 @@
+{
+  "name": "plano-local-studio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --test test.mjs",
+    "check:upload": "node upload-regression.mjs",
+    "smoke": "node smoke.mjs",
+    "ui": "node ui-check.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "gsap": "3.14.2",
+    "hyperframes": "0.8.97"
+  }
+}

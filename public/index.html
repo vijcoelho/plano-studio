@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#faf9f5"><title>Plano — estúdio com Claude</title><link rel="preload" href="/fonts/sans.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<a class="skip" href="#workspace">Pular para o estúdio</a>
+<header class="header">
+  <a class="brand" href="/" aria-label="Plano, início">plano</a>
+  <div class="header-actions">
+    <button id="library-toggle" class="ghost mobile-only" aria-expanded="false">Projetos</button>
+    <button id="theme-toggle" class="ghost theme-toggle" aria-label="Alternar modo escuro" title="Modo escuro/claro"><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
+    <button id="help-open" class="ghost">Guia</button>
+    <button id="settings-open" class="ghost">Ajustes</button>
+    <button id="new-project" class="primary">Novo projeto</button>
+  </div>
+</header>
+<div id="notice" role="status" aria-live="polite" popover="manual" hidden></div>
+<div class="shell">
+<aside class="library" id="library">
+  <div class="library-heading"><h2>Projetos</h2><span id="project-count" class="count">0</span></div>
+  <label class="sr-only" for="project-search">Buscar projeto</label>
+  <input id="project-search" type="search" placeholder="Buscar">
+  <nav id="project-list" aria-label="Biblioteca de projetos"><p class="muted">Carregando…</p></nav>
+  <button class="ghost tools-link" id="dependencies-open">Ferramentas locais</button>
+</aside>
+
+<main id="workspace" tabindex="-1">
+  <div class="workspace-heading">
+    <div><p class="eyebrow" id="project-meta">Uma ideia vira um vídeo</p><h1 id="project-name">O que vamos criar hoje?</h1></div>
+    <button class="ghost" id="rename-project" hidden>Renomear</button>
+  </div>
+
+  <section class="viewer-section" aria-label="Prévia do vídeo">
+    <div class="viewer" id="viewer">
+      <video id="player" controls playsinline preload="metadata" hidden aria-label="Player do vídeo"></video>
+      <div id="viewer-empty">
+        <h2>Comece por um vídeo ou por uma ideia.</h2>
+        <p>Claude analisa frames e falas para sugerir cortes,<br>ou escreve cenas para um vídeo novo.</p>
+        <div class="empty-actions"><button class="light" id="upload-hero">Importar MP4</button><button class="ghost-light" id="create-hero">Criar do zero</button></div>
+      </div>
+    </div>
+    <div class="viewer-toolbar">
+      <div class="view-tabs" role="group" aria-label="Mídia exibida"><button id="view-original" class="active">Original</button><button id="view-result" disabled>Resultado</button></div>
+      <span id="media-info">Nenhum vídeo</span>
+    </div>
+    <div id="job-status" class="job-status" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="job-text"></span><button id="cancel-job" class="ghost">Cancelar</button></div>
+  </section>
+
+  <section class="input-strip">
+    <label class="dropzone" id="dropzone" for="file-input"><span class="upload-symbol" aria-hidden="true">↑</span><span><strong id="upload-label">Arraste um MP4</strong><small id="upload-help">ou clique para escolher · até 500 MB</small></span><input id="file-input" type="file" accept="video/mp4,.mp4" aria-label="Importar arquivo MP4"></label>
+    <div class="context-actions"><button id="transcript-open" class="secondary" disabled>Legendas SRT</button><button id="transcribe" class="ghost" disabled>Transcrever</button><span id="transcript-info" class="muted">Falas dão contexto ao Claude</span></div>
+  </section>
+
+  <section id="frames-section" hidden><div class="section-heading"><h2>Contexto visual</h2><span class="muted">5 frames enviados ao Claude</span></div><div id="frames" class="frames"></div></section>
+
+  <section class="block">
+    <div class="section-heading"><h2>Plano</h2><button id="manual-toggle" class="ghost">Selecionar trecho</button></div>
+    <div id="manual-panel" hidden><form id="manual-form" class="manual-form"><label>Início (s)<input id="cut-start" type="number" min="0" step="0.1" value="0" required></label><label>Fim (s)<input id="cut-end" type="number" min="0.5" step="0.1" value="15" required></label><label>Título<input id="cut-title" maxlength="100" value="Meu corte" required></label><button class="secondary" type="submit">Salvar trecho</button></form></div>
+    <div id="plan-empty" class="plan-empty"><p>Peça um corte ou uma criação no chat.</p><small>Você revisa tudo antes de renderizar.</small></div>
+    <div id="plan" hidden></div>
+    <div class="presets">
+      <label>Enquadramento<select id="framing"><option value="fill">9:16 · corte central</option><option value="fit">9:16 · quadro inteiro</option></select></label>
+      <label>Legendas<select id="caption-style"><option value="clean">Clássica</option><option value="impact">Destaque</option></select></label>
+      <label>Resolução<select id="resolution"><option value="720">720 × 1280</option><option value="1080">1080 × 1920</option></select></label>
+      <label class="checkbox"><input id="captions-enabled" type="checkbox" checked>Gravar legendas</label>
+      <label class="checkbox" id="narration-option" hidden><input id="narration-enabled" type="checkbox">Narração ElevenLabs</label>
+    </div>
+    <div class="render-row"><p id="render-help" class="muted">MP4 vertical para Reels, TikTok e Shorts.</p><button id="render" class="primary" disabled>Renderizar</button></div>
+  </section>
+
+  <section class="block">
+    <div class="section-heading"><h2>Resultados <span id="result-count" class="count">0</span></h2></div>
+    <div id="results"><div class="results-empty"><p>Vídeos finalizados aparecem aqui.</p></div></div>
+  </section>
+</main>
+
+<aside class="chat-panel" aria-label="Conversa com Claude">
+  <div class="chat-heading"><svg class="mark clay" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1"/></svg><div><h2 id="ai-name">Claude</h2><p id="claude-status">Verificando…</p></div><span class="chat-dot" id="claude-dot"></span></div>
+  <button id="claude-connect" class="primary claude-connect" hidden>Conectar minha conta Claude</button>
+  <div id="chat-history" class="chat-history" aria-live="polite">
+    <div class="chat-intro">
+      <h3>Você traz a intenção.<br>Claude encontra o corte.</h3>
+      <p>Frames, falas e suas skills de vídeo entram no contexto.</p>
+      <div class="prompt-chips">
+        <button data-prompt="Selecione até 3 cortes verticais com um gancho forte e uma conclusão clara. Use apenas o contexto e a transcrição disponíveis.">Encontrar os melhores cortes</button>
+        <button data-prompt="Analise os frames e a transcrição deste vídeo e me diga como melhorar o ritmo, sem inventar falas.">Pensar a edição comigo</button>
+        <button data-prompt="Quero criar um vídeo tipográfico vertical do zero. Meu tema é: ">Criar um vídeo do zero</button>
+      </div>
+    </div>
+  </div>
+  <form id="chat-form" class="chat-compose">
+    <label class="sr-only" for="chat-input">Mensagem para Claude</label>
+    <textarea id="chat-input" rows="3" maxlength="4000" placeholder="Encontre um trecho de 30 s sobre a ideia principal…" required></textarea>
+    <div class="compose-row"><small id="chat-info">Importe um vídeo ou descreva uma ideia</small><button id="chat-send" class="send" aria-label="Enviar para Claude">↑</button></div>
+  </form>
+</aside>
+</div>
+
+<dialog id="new-dialog"><form id="new-form"><div class="dialog-heading"><h2>Novo projeto</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div><label>Nome<input id="new-name" maxlength="100" placeholder="Minha próxima história" required></label><button class="primary" type="submit">Criar projeto</button></form></dialog>
+<dialog id="rename-dialog"><form id="rename-form"><div class="dialog-heading"><h2>Renomear</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div><label>Nome<input id="rename-name" maxlength="100" required></label><button class="primary">Salvar</button></form></dialog>
+<dialog id="transcript-dialog"><form id="transcript-form"><div class="dialog-heading"><h2>Legendas</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div><p class="muted">Falas reais com tempos. Usadas no plano e gravadas nos cortes.</p><label>Arquivo SRT<input id="srt-file" type="file" accept=".srt"></label><label for="srt-text">Conteúdo SRT</label><textarea id="srt-text" rows="10" maxlength="500000" placeholder="1&#10;00:00:00,000 --> 00:00:02,000&#10;A primeira fala do vídeo." required></textarea><button class="primary">Salvar legendas</button></form></dialog>
+<dialog id="settings-dialog" class="settings-page" aria-labelledby="settings-title">
+  <div class="settings-top"><h2 id="settings-title">Ajustes e guia</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div>
+  <div class="settings-body">
+    <nav class="settings-nav" role="tablist" aria-label="Seções de ajustes">
+      <button role="tab" data-tab="start" aria-selected="true">Começar</button>
+      <button role="tab" data-tab="ai">IA que edita</button>
+      <button role="tab" data-tab="keys">Chaves de API</button>
+      <button role="tab" data-tab="voice">Voz</button>
+      <button role="tab" data-tab="instagram">Instagram</button>
+      <button role="tab" data-tab="tools">Ferramentas</button>
+    </nav>
+    <div class="settings-panels">
+      <section class="panel" data-panel="start" role="tabpanel">
+        <p class="eyebrow">Guia rápido</p>
+        <h3 class="panel-title">Do MP4 ao Reel em quatro passos</h3>
+        <ol class="guide">
+          <li><strong>Importe um MP4</strong><span>Arraste o vídeo para a área de upload. O original nunca é alterado; o estúdio extrai 5 frames para a IA enxergar o vídeo.</span></li>
+          <li><strong>Dê as falas para a IA</strong><span>Clique em <em>Transcrever</em> (Whisper local, grátis, em português) ou importe um SRT. Com as falas, a IA acha os melhores trechos.</span></li>
+          <li><strong>Peça no chat</strong><span>“Ache 3 cortes de 30 s com gancho forte”. A IA devolve um plano com início, fim e título — você ajusta tudo antes.</span></li>
+          <li><strong>Renderize e exporte</strong><span>Escolha corte central ou quadro inteiro, legenda clássica ou destaque e 720p/1080p. Baixe MP4 + SRT ou publique no Instagram.</span></li>
+        </ol>
+        <h3 class="panel-title small">Experimente</h3>
+        <div class="examples">
+          <article class="example"><span class="tag">Podcast · entrevista</span><h4>1 hora vira 5 Reels</h4><p>Cortes verticais de 30–60 s com as frases mais fortes e legenda gravada.</p><button type="button" class="secondary" data-example="Encontre os 5 melhores trechos de 30 a 60 segundos para Reels. Cada um precisa de um gancho nos primeiros 3 segundos e terminar numa ideia completa.">Usar este pedido</button></article>
+          <article class="example"><span class="tag">Aula · palestra</span><h4>O momento que ensina</h4><p>Um corte com começo, meio e fim que explica um conceito sozinho.</p><button type="button" class="secondary" data-example="Encontre um trecho de até 90 segundos em que uma ideia é explicada do começo ao fim, que funcione sozinho para quem nunca viu o vídeo.">Usar este pedido</button></article>
+          <article class="example"><span class="tag">Produto · lançamento</span><h4>Vídeo do zero, com voz</h4><p>Quatro cenas tipográficas animadas; com ElevenLabs, cada cena ganha narração.</p><button type="button" class="secondary" data-example="Crie um vídeo vertical do zero, 4 cenas, apresentando meu produto: [descreva o produto]. Termine com uma chamada para ação. Escreva a narração de cada cena.">Usar este pedido</button></article>
+          <article class="example"><span class="tag">Vlog · bastidores</span><h4>Teaser de 15 segundos</h4><p>O trecho mais curioso para abrir a semana nos Stories.</p><button type="button" class="secondary" data-example="Selecione um único trecho de 10 a 15 segundos que desperte curiosidade, ideal para teaser. Explique por que escolheu.">Usar este pedido</button></article>
+          <article class="example"><span class="tag">Qualquer vídeo</span><h4>Revisão de ritmo</h4><p>A IA aponta onde o vídeo cansa e o que cortar, sem inventar falas.</p><button type="button" class="secondary" data-example="Analise os frames e a transcrição e me diga onde o ritmo cai, o que cortar e qual seria a melhor abertura. Não gere cortes ainda.">Usar este pedido</button></article>
+          <article class="example"><span class="tag">Frase · citação</span><h4>Card animado de frase</h4><p>Uma cena com a frase de impacto do vídeo em tipografia editorial.</p><button type="button" class="secondary" data-example="Crie uma única cena tipográfica de 6 segundos com a frase mais marcante da transcrição, paleta slate.">Usar este pedido</button></article>
+        </div>
+        <p class="hint">Limites: MP4 até 500 MB e 3 horas. Tudo fica neste computador; só o contexto do pedido (frames, falas e texto) vai para a IA escolhida.</p>
+      </section>
+
+      <form id="settings-form" class="panel-form">
+        <section class="panel" data-panel="ai" role="tabpanel" hidden>
+          <p class="eyebrow">IA que planeja os cortes e cenas</p>
+          <h3 class="panel-title">Escolha quem edita</h3>
+          <p class="muted">O padrão é <strong>Claude Opus 5.5 com esforço médio</strong> pelo Claude Code. Assinatura (CLI) ou chave de API, Claude ou Codex: o resultado é sempre um plano que você revisa.</p>
+          <div class="providers" id="providers">
+            <label class="provider"><input type="radio" name="provider" value="claude-cli"><span><strong>Claude Code (assinatura)</strong><small>Usa sua conta Claude Pro/Max. Lê as skills de vídeo instaladas. Recomendado.</small></span><em data-ready="claude-cli"></em></label>
+            <label class="provider"><input type="radio" name="provider" value="claude-api"><span><strong>Claude por API</strong><small>Cobra por uso na sua chave Anthropic. Mesmo modelo, sem precisar de login.</small></span><em data-ready="claude-api"></em></label>
+            <label class="provider"><input type="radio" name="provider" value="codex-cli"><span><strong>Codex CLI (ChatGPT)</strong><small>Usa sua conta ChatGPT pelo Codex, ou a chave OpenAI.</small></span><em data-ready="codex-cli"></em></label>
+            <label class="provider"><input type="radio" name="provider" value="openai-api"><span><strong>OpenAI por API</strong><small>Modelos GPT pela sua chave OpenAI.</small></span><em data-ready="openai-api"></em></label>
+            <label class="provider"><input type="radio" name="provider" value="openrouter"><span><strong>OpenRouter</strong><small>Uma chave para centenas de modelos (Claude, GPT, Gemini…).</small></span><em data-ready="openrouter"></em></label>
+          </div>
+          <div class="login-row"><button type="button" id="settings-claude-login" class="secondary">Conectar conta Claude</button><button type="button" id="settings-codex-login" class="secondary">Conectar conta ChatGPT (Codex)</button></div>
+          <div class="field-grid">
+            <label>Modelo Claude<input id="model-claude" list="claude-models" autocomplete="off"><datalist id="claude-models"><option value="claude-opus-5-5">Opus 5.5 — padrão</option><option value="claude-sonnet-5-5">Sonnet 5.5 — mais rápido</option><option value="claude-haiku-4-5">Haiku 4.5 — econômico</option><option value="claude-fable-5-1">Fable 5.1 — máximo</option></datalist></label>
+            <label>Modelo OpenAI / Codex<input id="model-openai" list="openai-models" autocomplete="off"><datalist id="openai-models"><option value="gpt-6.1-sol"></option><option value="gpt-6-sol"></option><option value="gpt-5.3-codex"></option></datalist></label>
+            <label>Modelo OpenRouter<input id="model-openrouter" list="openrouter-models" autocomplete="off"><datalist id="openrouter-models"><option value="anthropic/claude-opus-5.5"></option><option value="anthropic/claude-sonnet-5.5"></option><option value="openai/gpt-6.1-sol"></option><option value="google/gemini-3.8-flash"></option></datalist></label>
+            <label>Esforço de raciocínio<select id="effort"><option value="low">Baixo — respostas rápidas</option><option value="medium">Médio — padrão equilibrado</option><option value="high">Alto — análise mais cuidadosa</option><option value="xhigh">Muito alto</option><option value="max">Máximo — mais lento e caro</option></select></label>
+          </div>
+          <label class="checkbox"><input id="skills-enabled" type="checkbox" checked>Claude Code consulta as skills de vídeo instaladas (só leitura)</label>
+          <p class="muted" id="skills-hint"></p>
+        </section>
+
+        <section class="panel" data-panel="voice" role="tabpanel" hidden>
+          <p class="eyebrow">Narração com ElevenLabs</p>
+          <h3 class="panel-title">Voz nas criações</h3>
+          <p class="muted">Com a chave ElevenLabs salva, vídeos criados do zero podem ganhar narração: a IA escreve a fala de cada cena e o estúdio gera a voz e mixa no tempo certo. Marque <em>Narração</em> antes de renderizar.</p>
+          <div class="field-grid">
+            <label>ID da voz<input id="voice-id" maxlength="120" autocomplete="off" placeholder="JBFqnCBsd6RMkjVDRZzb"></label>
+            <label>Modelo de voz<select id="voice-model"><option value="eleven_multilingual_v2">Multilingual v2 — natural em PT-BR</option><option value="eleven_v3">Eleven v3 — mais expressivo</option><option value="eleven_flash_v2_5">Flash v2.5 — mais rápido e barato</option></select></label>
+          </div>
+          <p class="hint">Para trocar a voz: no site da ElevenLabs abra <em>Voices</em>, escolha uma voz, clique em <em>⋯ → Copy voice ID</em> e cole aqui.</p>
+        </section>
+
+        <section class="panel" data-panel="instagram" role="tabpanel" hidden>
+          <p class="eyebrow">Publicação via Composio</p>
+          <h3 class="panel-title">Instagram (Reels)</h3>
+          <p id="composio-hint" class="hint"></p>
+          <ol class="guide compact"><li><span>Salve a chave Composio em <em>Chaves de API</em>.</span></li><li><span>No painel Composio, crie um auth config de Instagram e cole o ID abaixo.</span></li><li><span>Clique em <em>Conectar Instagram</em>, autorize a conta Business/Creator e depois em <em>Verificar</em>.</span></li><li><span>Informe o ID numérico da conta profissional. Cada publicação pede confirmação.</span></li></ol>
+          <div class="field-grid">
+            <label>Auth config<input id="auth-config" maxlength="120" placeholder="ac_…" autocomplete="off"></label>
+            <label>Conta conectada<input id="connected-account" maxlength="120" placeholder="ca_…" autocomplete="off"></label>
+            <label>ID da conta profissional<input id="ig-user" maxlength="120" placeholder="Numérico" autocomplete="off"></label>
+            <label>Identificador local<input id="composio-user" maxlength="120" value="local-studio"></label>
+          </div>
+          <div class="integration-actions"><button type="button" id="connect-instagram" class="secondary">Conectar Instagram</button><button type="button" id="check-instagram" class="ghost">Verificar</button><a id="connect-link" hidden target="_blank" rel="noopener noreferrer">Autorizar no Composio</a></div>
+          <p id="instagram-status" role="status" class="muted"></p>
+          <div class="automation"><h4>Publicação automática deste projeto</h4><label class="checkbox"><input id="auto-publish" type="checkbox">Publicar novos renders no Instagram</label><label>Legenda<textarea id="auto-caption" maxlength="2200" rows="2"></textarea></label><button type="button" id="save-automatic" class="secondary">Salvar opção automática</button><small class="muted">Desligada por padrão. Ativa publica sem nova confirmação.</small></div>
+        </section>
+        <div class="form-footer" id="settings-footer" hidden><button class="primary">Salvar ajustes</button></div>
+      </form>
+
+      <form id="secrets-form" class="panel" data-panel="keys" role="tabpanel" hidden autocomplete="off">
+        <p class="eyebrow">Ficam só neste computador</p>
+        <h3 class="panel-title">Chaves de API</h3>
+        <p class="muted">Cole só as que for usar. Elas ficam salvas no servidor local (nunca voltam para a tela nem vão para o Git). Variáveis de ambiente, se existirem, têm prioridade.</p>
+        <div class="keys" id="keys"></div>
+        <div class="form-footer"><button class="primary">Salvar chaves</button></div>
+      </form>
+
+      <section class="panel" data-panel="tools" role="tabpanel" hidden>
+        <p class="eyebrow">Diagnóstico</p>
+        <h3 class="panel-title">Ferramentas locais</h3>
+        <div id="capabilities"></div>
+      </section>
+    </div>
+  </div>
+</dialog>
+<dialog id="codex-dialog"><form id="codex-form"><div class="dialog-heading"><h2>Conectar ChatGPT (Codex)</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div><p class="muted">Abra a página da OpenAI, entre na sua conta e digite este código:</p><p class="device-code" id="codex-code">····-·····</p><a id="codex-link" target="_blank" rel="noopener noreferrer" hidden>Abrir página da OpenAI</a><button class="primary" id="codex-done" disabled>Já autorizei</button></form></dialog>
+<dialog id="login-dialog"><form id="login-form"><div class="dialog-heading"><h2>Conectar Claude</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div><p class="muted">Use sua conta Claude (Pro, Max ou Team). É só uma vez; o login fica salvo neste computador.</p><ol class="steps"><li><strong>Abra a página de autorização</strong><button type="button" id="login-start" class="secondary">Gerar link e abrir</button><a id="login-link" hidden target="_blank" rel="noopener noreferrer">Abrir a página de novo</a></li><li><strong>Autorize e copie o código</strong><span class="muted">A página mostra um código para colar aqui.</span></li><li><label>Código de autorização<input id="login-code" autocomplete="off" spellcheck="false" placeholder="Cole o código aqui" required disabled></label></li></ol><button class="primary" id="login-submit" disabled>Conectar</button></form></dialog>
+<dialog id="publish-dialog"><form id="publish-form"><div class="dialog-heading"><h2>Publicar no Instagram</h2><button type="button" data-close class="close" aria-label="Fechar">×</button></div><p id="publish-title"></p><label>Texto do Reel<textarea id="publish-caption" rows="4" maxlength="2200"></textarea></label><p class="hint">O vídeo será enviado ao Composio e publicado publicamente.</p><label class="checkbox"><input id="publish-confirm" type="checkbox" required>Quero publicar este vídeo</label><button class="primary">Publicar agora</button></form></dialog>
+</body></html>
