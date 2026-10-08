@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#141413}canvas{display:block}</style>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib/motion.js"></script>
+<script>
+const W = 1080, H = 1920, DUR = 6;
+const g = document.getElementById('c').getContext('2d');
+
+// One object per shot. draw(t) gets local time. Layout from W/H, not fixed pixels.
+const SCENES = [
+  { from: 0, to: 3, draw(t) {                        // kinetic title
+      const s = spring(t - 0.1, ...SPRINGS.heavy);
+      g.save(); g.translate(W / 2, H * 0.45); g.scale(0.6 + 0.4 * s, 0.6 + 0.4 * s);
+      g.globalAlpha = clamp(t * 4);
+      g.fillStyle = '#F0EEE6'; g.font = `700 ${W * 0.17}px serif`;
+      g.textAlign = 'center'; g.fillText('MOTION', 0, 0);
+      g.fillStyle = '#D97757'; g.fillRect(-W * 0.3 * s, W * 0.05, W * 0.6 * s, 18);
+      g.restore();
+  }},
+  { from: 3, to: 6, draw(t) {                        // staggered grid
+      const r = rng(7), cell = W / 6.35;
+      for (let i = 0; i < 48; i++) {
+        const x = (i % 6) * cell + cell * 0.68, y = Math.floor(i / 6) * cell + H * 0.19;
+        const s = spring(t - i * 0.03 - r() * 0.1, ...SPRINGS.snappy);
+        g.fillStyle = i % 7 ? '#F0EEE6' : '#D97757';
+        g.fillRect(x - cell * 0.35 * s, y - cell * 0.35 * s, cell * 0.7 * s, cell * 0.7 * s);
+      }
+  }},
+];
+
+function draw(t) {
+  g.fillStyle = '#141413'; g.fillRect(0, 0, W, H);
+  for (const s of SCENES) if (t >= s.from && t < s.to) s.draw(t - s.from);
+}
+window.seek = (t) => { draw(t); return true; };
+window.DUR = DUR;
+
+// Live preview in a normal browser; off during headless render.
+if (!navigator.webdriver) {
+  const t0 = performance.now();
+  (function loop() { draw(loopT((performance.now() - t0) / 1000, DUR)); requestAnimationFrame(loop); })();
+}
+</script>

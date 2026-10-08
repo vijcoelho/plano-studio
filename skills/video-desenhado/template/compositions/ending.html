@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+  <head><meta charset="UTF-8" /></head>
+  <body>
+    <template>
+      <style>
+        #root { position: absolute; inset: 0; overflow: hidden; background: #efe9dc; }
+        #e-cam { position: absolute; inset: 0; transform-origin: 50% 40%; will-change: transform; }
+        #e-paper { position: absolute; inset: 0; background: url("assets/paper.png") center / cover; }
+        #e-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(80,60,40,.16) 100%); }
+        #e-ground { position: absolute; left: 0; top: 0; }
+        #e-clawd { position: absolute; left: 380px; top: 150px; width: 400px; height: 300px; }
+        #e-clawd-inner { width: 400px; height: 300px; transform-origin: 50% 90%; }
+        #e-bubble { position: absolute; left: 880px; top: 24px; width: 620px; height: 400px; }
+        #e-bubble svg { position: absolute; left: 0; top: 0; overflow: visible; }
+        #e-glow { position: absolute; left: 150px; top: 30px; width: 340px; height: 340px; border-radius: 50%;
+          background: radial-gradient(circle, rgba(255,200,97,.55) 0%, rgba(255,200,97,0) 68%); }
+        #e-tag { position: absolute; left: 160px; right: 160px; top: 540px; text-align: center;
+          font: 700 118px "Caveat", cursive; line-height: 1.08; color: #2a1d17; letter-spacing: -0.01em; }
+        .e-line { display: block; }
+        .e-w { display: inline-block; margin: 0 14px; }
+        .e-brand { position: relative; color: #b4532f; }
+        .e-brand svg { position: absolute; left: -6%; bottom: -10px; width: 112%; height: 30px; overflow: visible; }
+        #e-graph .e-ink2 path { fill: none; stroke: #2a1d17; stroke-width: 3.4; stroke-linecap: round; }
+      </style>
+
+      <div id="root" data-composition-id="ending" data-width="1920" data-height="1080">
+        <div id="e-cam">
+          <div id="e-paper"></div>
+          <div id="e-vignette"></div>
+          <svg id="e-ground" width="1920" height="1080"><g class="e-ink" id="e-groundline"></g></svg>
+          <div id="e-bubble">
+            <svg width="620" height="400" id="e-cloud"></svg>
+            <div id="e-glow"></div>
+            <svg width="620" height="400" id="e-graph"></svg>
+          </div>
+          <div id="e-clawd"><div id="e-clawd-inner"></div></div>
+          <div id="e-tag">
+            <div class="e-line"><span class="e-w">Com</span><span class="e-w">o</span><span class="e-w e-brand">Sinapse,<svg viewBox="0 0 300 30" preserveAspectRatio="none"><path id="e-underline" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" d="M4 18 C 70 8, 150 26, 296 10" fill="none" stroke="#b4532f" stroke-width="6" stroke-linecap="round"/></svg></span><span class="e-w">seu</span><span class="e-w">Claude</span></div>
+            <div class="e-line"><span class="e-w">não</span><span class="e-w">perde</span><span class="e-w">a</span><span class="e-w">memória.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (() => {
+          const S = window.Sketch, P = "e";
+          const root = document.querySelector('[data-composition-id="ending"]');
+          const $ = (s) => root.querySelector(s);
+          const style = document.createElement("style");
+          style.textContent = S.INK_CSS(P) + S.CLOUD_CSS(P);
+          root.appendChild(style);
+
+          $("#e-clawd-inner").innerHTML = S.mascot(P, { happy: true });
+          $("#e-groundline").innerHTML = S.boiled(P, [[S.line, [300, 418, 860, 418, 1.2]]], 311);
+
+          const puffs = [[140, 200, 100], [250, 115, 96], [380, 105, 100], [500, 175, 96], [465, 285, 88], [310, 300, 96], [165, 290, 84]];
+          const tails = [[-80, 212, 13], [-32, 178, 19]];
+          $("#e-cloud").innerHTML =
+            tails.map(([x, y, rr], i) => `<g id="e-tail${i}"><g class="e-ink">${S.boiled(P, [[S.ellipse, [x, y, rr, rr, 1]]], 801 + i * 10)}</g><circle cx="${x}" cy="${y}" r="${rr}" fill="#fbf7ee"/></g>`).join("") +
+            S.cloud(P, puffs, 821);
+
+          // the memory graph, now kept safe in the thought bubble
+          const C = [320, 200], N = [[210, 120], [330, 80], [450, 140], [440, 270], [300, 310], [190, 250]];
+          const E = N.map((n) => [C, n]).concat(N.map((n, i) => [n, N[(i + 1) % N.length]]));
+          $("#e-graph").innerHTML = `<g class="e-ink2">` +
+            E.map((e, i) => `<path class="e-edge" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" d="${S.line(...e[0], ...e[1], S.rng(900 + i), 1.3)}"/>`).join("") + `</g>` +
+            N.map((n, i) => `<circle class="e-node" id="e-node${i}" cx="${n[0]}" cy="${n[1]}" r="13" fill="#ffc861" stroke="#2a1d17" stroke-width="3.5"/>`).join("") +
+            `<rect id="e-core" x="${C[0] - 24}" y="${C[1] - 18}" width="48" height="36" rx="4" fill="#d97757" stroke="#2a1d17" stroke-width="3.5"/>` +
+            `<rect x="${C[0] - 12}" y="${C[1] - 9}" width="6" height="11" rx="2" fill="#1d1512"/><rect x="${C[0] + 6}" y="${C[1] - 9}" width="6" height="11" rx="2" fill="#1d1512"/>`;
+
+          const tl = gsap.timeline({ paused: true });
+          S.boil(tl, P, 0, 8.5);
+
+          // 0–1.2 pull back out of the zoom, Claude hops with joy
+          tl.fromTo("#e-cam", { scale: 1.3 }, { scale: 1, duration: 1.3, ease: "power3.out" }, 0);
+          S.hop(tl, "#e-clawd-inner", 0.15, 60); // anticipation → stretch → squash → spring
+
+          // 0.6–2.2 bubble with the graph, safe and sound
+          S.pop(tl, "#e-tail0", 0.6, { response: 0.3 });
+          S.pop(tl, "#e-tail1", 0.7, { response: 0.3 });
+          S.popCloud(tl, P, puffs, 0.8, 0.045);
+          S.pop(tl, "#e-core", 1.1, { response: 0.36 });
+          root.querySelectorAll(".e-edge").forEach((e, i) => tl.to(e, { strokeDashoffset: 0, duration: 0.3, ease: "power2.out" }, 1.2 + i * 0.07));
+          N.forEach((_, i) => S.pop(tl, `#e-node${i}`, 1.4 + i * 0.08, { response: 0.3 }));
+          tl.fromTo("#e-glow", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" }, 1.6);
+          tl.to("#e-glow", { scale: 1.12, duration: 0.8, ease: "sine.inOut", yoyo: true, repeat: 6 }, 2.45);
+
+          // 1.5–2.9 wave
+          tl.fromTo("#e-armR", { rotation: 0, svgOrigin: S.SHOULDER.R }, { rotation: -28, svgOrigin: S.SHOULDER.R, duration: 0.2, ease: "sine.inOut", yoyo: true, repeat: 5 }, 1.5);
+
+          // 3.0–4.9 the promise
+          S.writeOn(tl, root.querySelectorAll(".e-w"), 2.9, 16, 0.07); // written by hand, word by word
+          tl.to("#e-underline", { strokeDashoffset: 0, duration: 0.45, ease: "power2.out" }, 3.95);
+          tl.fromTo(".e-brand", { scale: 1 }, { scale: 1.08, duration: 0.22, ease: "power2.out", yoyo: true, repeat: 1 }, 4.05);
+
+          // 5–8.5 hold with a little life
+          tl.to("#e-upper", { y: -4, duration: 0.6, ease: "sine.inOut", yoyo: true, repeat: 5 }, 4.8);
+          N.forEach((_, i) => tl.to(`#e-node${i}`, { scale: 1.25, duration: 0.3, ease: "sine.inOut", yoyo: true, repeat: 1 }, 5.2 + i * 0.25));
+
+          window.__timelines["ending"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

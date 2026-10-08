@@ -8,3 +8,5 @@ CODE-REVIEW*.md
 SECURITY-REVIEW*.md
 EVIDENCE.md
 FIX-EVIDENCE.md
+skills/*/node_modules/
+videos/

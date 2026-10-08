@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+  <head><meta charset="UTF-8" /></head>
+  <body>
+    <template>
+      <style>
+        #root { position: absolute; inset: 0; overflow: hidden; background: #0f1233; }
+        #g-bg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, #2b2a78 0%, #171a4a 38%, #0f1233 72%); }
+        #g-cam { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
+        #g-stars, #g-net { position: absolute; left: 0; top: 0; overflow: visible; }
+        #g-edges { filter: drop-shadow(0 0 6px rgba(160,140,255,.8)); }
+        #g-nodes circle { filter: drop-shadow(0 0 10px rgba(255,200,97,.95)); }
+        .g-label { position: absolute; width: 440px; text-align: center; }
+        .g-label span { display: inline-block; padding: 6px 16px; border-radius: 10px; background: rgba(15,18,51,.86);
+          border: 2px solid rgba(243,236,220,.35); font: 700 30px "Shantell Sans", sans-serif; font-variation-settings: "INFM" 50; color: #f6efdf; }
+        #g-grain { position: absolute; inset: 0; background: url("assets/grain.jpg") center / cover; mix-blend-mode: overlay; opacity: .32; }
+        #g-center { position: absolute; left: 896px; top: 480px; width: 128px; height: 96px; }
+        #g-center-inner { width: 400px; height: 300px; transform: scale(.32); transform-origin: 0 0; }
+        #g-halo { position: absolute; left: 810px; top: 390px; width: 300px; height: 300px; border-radius: 50%;
+          background: radial-gradient(circle, rgba(255,170,110,.55) 0%, rgba(217,119,87,.2) 45%, rgba(217,119,87,0) 70%); }
+        #g-caption { position: absolute; left: 100px; top: 40px; width: 660px; line-height: 1; font: 700 96px "Caveat", cursive; color: #f6efdf; letter-spacing: -0.01em; }
+        #g-caption span { display: inline-block; margin-right: 22px; }
+        #g-fade { position: absolute; inset: 0; background: #0f1233; }
+        #g-iris { position: absolute; inset: 0; background: #efe9dc url("assets/paper.png") center / cover; clip-path: circle(0% at 50% 50%); }
+      </style>
+
+      <div id="root" data-composition-id="graph" data-width="1920" data-height="1080">
+        <div id="g-bg"></div>
+        <div id="g-cam" data-layout-allow-overflow>
+          <svg id="g-stars" width="1920" height="1080"></svg>
+          <div id="g-halo"></div>
+          <svg id="g-net" width="1920" height="1080"><g id="g-edges" fill="none" stroke-linecap="round"></g><g id="g-pulses"></g><g id="g-nodes"></g>
+            <circle id="g-ring" cx="960" cy="528" r="80" fill="none" stroke="#ffc861" stroke-width="4" opacity="0"/></svg>
+          <div id="g-labels"></div>
+          <div id="g-center"><div id="g-center-inner"></div></div>
+        </div>
+        <div id="g-grain"></div>
+        <div id="g-caption"><span>agora</span><span>eu</span><span>lembro</span><span>de</span><span>tudo!</span></div>
+        <div id="g-fade"></div>
+        <div id="g-iris"></div>
+      </div>
+
+      <script>
+        (() => {
+          const S = window.Sketch, P = "g";
+          const root = document.querySelector('[data-composition-id="graph"]');
+          const $ = (s) => root.querySelector(s);
+          const style = document.createElement("style");
+          style.textContent = S.INK_CSS(P);
+          root.appendChild(style);
+          $("#g-center-inner").innerHTML = S.mascot(P);
+
+          const r = S.rng(77);
+          $("#g-stars").innerHTML = Array.from({ length: 120 }, (_, i) =>
+            `<circle class="g-star" cx="${(r() * 2200 - 140).toFixed(0)}" cy="${(r() * 1300 - 110).toFixed(0)}" r="${(0.8 + r() * 2.2).toFixed(1)}" fill="#fff6e0" opacity="${(0.3 + r() * 0.6).toFixed(2)}"/>`).join("");
+
+          const C = [960, 528];
+          // memories, clockwise from upper-left; label side: -1 above, 1 below
+          const M = [
+            [560, 330, "auth.ts refatorado", -1], [960, 190, "API v2", -1], [1370, 300, "decisão: Postgres", -1],
+            [1680, 540, "deploy: sexta não!", 1], [1420, 770, "bug #42 resolvido", 1], [960, 880, "cor: #D97757", 1],
+            [520, 770, "prefere pt-BR", 1], [250, 540, "testes: vitest", 1],
+          ];
+          const spokes = M.map((m, i) => ({ a: C, b: [m[0], m[1]], seed: 600 + i }));
+          const ring = M.map((m, i) => ({ a: [m[0], m[1]], b: [M[(i + 1) % 8][0], M[(i + 1) % 8][1]], seed: 700 + i }));
+          const edgePath = (e, cls, color, w) =>
+            `<path class="${cls}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" stroke="${color}" stroke-width="${w}" d="${S.line(...e.a, ...e.b, S.rng(e.seed), 2.2)}"/>`;
+          $("#g-edges").innerHTML =
+            spokes.map((e) => edgePath(e, "g-spoke", "#b3a4ff", 4.5)).join("") +
+            ring.map((e) => edgePath(e, "g-rim", "#8f7ff0", 3)).join("");
+          $("#g-nodes").innerHTML = M.map((m, i) =>
+            `<circle class="g-node" id="g-node${i}" cx="${m[0]}" cy="${m[1]}" r="17" fill="#ffc861" stroke="#fff3cf" stroke-width="3"/>`).join("");
+          $("#g-labels").innerHTML = M.map((m, i) =>
+            `<div class="g-label" id="g-label${i}" style="left:${m[0] - 220}px;top:${m[3] < 0 ? m[1] - 76 : m[1] + 30}px"><span>${m[2]}</span></div>`).join("");
+          const pulses = 26;
+          $("#g-pulses").innerHTML = Array.from({ length: pulses }, (_, i) =>
+            `<circle id="g-pulse${i}" cx="0" cy="0" r="7" fill="#fff3c4" opacity="0" style="filter:drop-shadow(0 0 8px #ffd27a)"/>`).join("");
+
+          const tl = gsap.timeline({ paused: true });
+          S.boil(tl, P, 0, 10);
+
+          // 0–0.8 out of the eye's darkness; camera drifts back to reveal the whole net
+          tl.fromTo("#g-fade", { opacity: 1 }, { opacity: 0, duration: 0.8, ease: "power1.out" }, 0);
+          tl.fromTo("#g-cam", { scale: 1.9, rotation: 5 }, { scale: 1, rotation: 0, duration: 7.6, ease: "power2.inOut" }, 0);
+          root.querySelectorAll(".g-star").forEach((s, i) => {
+            if (i % 5) return;
+            tl.to(s, { opacity: 0.1, duration: 0.6 + (i % 7) * 0.1, ease: "sine.inOut", yoyo: true, repeat: 7 }, (i % 11) * 0.15);
+          });
+
+          // 0.5 the center (Claude) lights up
+          S.pop(tl, "#g-center", 0.5, { response: 0.5, damping: 0.6 });
+          tl.fromTo("#g-halo", { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.0, ease: "power3.out" }, 0.5);
+          tl.to("#g-halo", { scale: 1.12, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: 7 }, 1.5);
+
+          // 1.1–4.8 each memory is reached through a synapse: spoke draws, spark rides it, node + label light up
+          const spokeEls = root.querySelectorAll(".g-spoke");
+          M.forEach((m, i) => {
+            const t = 1.1 + i * 0.45;
+            tl.to(spokeEls[i], { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" }, t);
+            tl.fromTo(`#g-pulse${i}`, { x: C[0], y: C[1], opacity: 1 }, { x: m[0], y: m[1], duration: 0.5, ease: "power2.out" }, t);
+            tl.to(`#g-pulse${i}`, { opacity: 0, duration: 0.2 }, t + 0.5);
+            S.pop(tl, `#g-node${i}`, t + 0.42, { response: 0.34, damping: 0.55 });
+            tl.fromTo(`#g-label${i}`, { opacity: 0, y: m[3] * -14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, t + 0.5);
+          });
+
+          // 5.0–6.3 memories connect to each other — the web closes
+          root.querySelectorAll(".g-rim").forEach((e, i) => tl.to(e, { strokeDashoffset: 0, duration: 0.45, ease: "power1.inOut" }, 5.0 + i * 0.1));
+
+          // 6.2–8.6 the whole network fires
+          tl.fromTo("#g-ring", { scale: 0.2, opacity: 1, transformOrigin: "50% 50%" }, { scale: 9, opacity: 0, duration: 1.6, ease: "power2.out" }, 6.2);
+          root.querySelectorAll(".g-node").forEach((n, i) =>
+            tl.to(n, { scale: 1.45, duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 }, 6.3 + i * 0.06));
+          const rr = S.rng(99), all = spokes.concat(ring);
+          for (let k = 8; k < pulses; k++) {
+            const e = all[Math.floor(rr() * all.length)], back = rr() < 0.5, a = back ? e.b : e.a, b = back ? e.a : e.b, t = 5.7 + (k - 8) * 0.14;
+            tl.fromTo(`#g-pulse${k}`, { x: a[0], y: a[1], opacity: 1 }, { x: b[0], y: b[1], duration: 0.6, ease: "sine.inOut" }, t);
+            tl.to(`#g-pulse${k}`, { opacity: 0, duration: 0.15 }, t + 0.6);
+          }
+          S.writeOn(tl, root.querySelectorAll("#g-caption span"), 6.7, 20, 0.05); // handwritten, left to right
+
+          // 8.6–10 push into Claude, iris opens onto paper
+          tl.to("#g-cam", { scale: 2.6, duration: 1.3, ease: "power2.in" }, 8.6);
+          tl.to("#g-caption", { opacity: 0, duration: 0.4 }, 8.7);
+          tl.fromTo("#g-iris", { clipPath: "circle(0% at 50% 50%)" }, { clipPath: "circle(75% at 50% 50%)", duration: 0.8, ease: "power2.in" }, 9.15);
+
+          window.__timelines["graph"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

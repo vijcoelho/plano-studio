@@ -14,7 +14,40 @@ Importa um MP4, deixa a IA achar os melhores cortes verticais, grava legendas e 
 
 Mac/Linux: `docker compose up -d --build` e abra http://127.0.0.1:4317.
 
-A imagem traz FFmpeg, HyperFrames + Chrome headless, Claude Code CLI, Codex CLI, whisper.cpp e as skills de vídeo do HyperFrames. O modelo Whisper small (~466 MB) baixa na primeira transcrição.
+A imagem traz FFmpeg, HyperFrames + Chrome headless, Claude Code CLI, Codex CLI, whisper.cpp e as skills de vídeo da pasta `skills/`. O modelo Whisper small (~466 MB) baixa na primeira transcrição.
+
+## Claude de vídeo (skills prontas)
+
+Além da tela do estúdio, dá para pedir vídeos direto ao Claude Code, com todas as skills de vídeo já instaladas no container (nada para instalar no Windows além do Docker).
+
+1. Abra o **Plano Studio.bat** uma vez (liga o Docker e monta a imagem).
+2. Dê dois cliques em **Claude de Video.bat**. Abre um terminal com o Claude Code dentro do container.
+3. Na primeira vez, se o Claude pedir login, siga o link (ou conecte a conta antes em Ajustes → IA que edita; o login é o mesmo).
+4. Peça em português, por exemplo:
+   - “faz um vídeo desenhado de 30 s explicando o que é o Plano Studio”
+   - “cria um vídeo de lançamento do site https://… com 20 s”
+   - “transforma esse texto num explainer sem rosto: …”
+   - “põe narração no vídeo da pasta lancamento”
+5. Os projetos e MP4 ficam na pasta **videos** ao lado do .bat. Para usar um arquivo seu (MP4, música, logo), coloque nessa pasta e cite o nome no pedido. Ao sair do Claude (`/exit`), a pasta abre sozinha.
+
+| Skill | Para quê |
+|---|---|
+| `hyperframes`, `hyperframes-core`, `-animation`, `-creative`, `-keyframes`, `-audio`, `-cli`, `-registry`, `-studio` | Base HyperFrames: composição em HTML, animação, direção visual, áudio, render |
+| `general-video` | Vídeo sob medida quando nenhum fluxo pronto serve |
+| `motion-studio`, `motion-graphics`, `motion-design` | Motion design em código com loop de crítica até ficar bom |
+| `video-desenhado` | Estilo “desenhado à mão” em papel, 20–45 s |
+| `video-demo` | Demo/promo curta estilo X, pixel art e som sintetizado |
+| `product-launch-video` | Vídeo de lançamento a partir de URL, roteiro ou briefing |
+| `faceless-explainer` | Explainer sem rosto a partir de texto ou tema |
+| `music-to-video` | Vídeo no ritmo de uma música |
+| `pr-to-video` | Vídeo explicando um pull request do GitHub |
+| `slideshow` | Apresentação navegável em HTML (deck com modo apresentador), não MP4 |
+| `talking-head-recut`, `embedded-captions` | Cartões gráficos e legendas em vídeo de pessoa falando |
+| `dublar-video` | Narração por cena em vídeo já renderizado (voz grátis) |
+| `media-use` | Música, efeitos, imagens e ícones para os projetos |
+| `remotion-to-hyperframes` | Converter projeto Remotion para HyperFrames |
+
+Algumas partes de `media-use` (voz/música por Gemini) precisam de chave própria; sem ela, a skill usa as alternativas locais. Vídeos longos e criativos gastam bastante do plano Claude.
 
 ## Ajustes (botão Ajustes ou Guia)
 

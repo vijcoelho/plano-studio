@@ -15,13 +15,16 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY *.mjs ./
 COPY public ./public
-RUN mkdir -p /data /home/node/.claude-auth /home/node/.codex /home/node/.cache/hyperframes/whisper && chown -R node:node /data /home/node /app
+RUN mkdir -p /data /home/node/.claude-auth /home/node/.codex /home/node/.cache/hyperframes/whisper /home/node/videos /home/node/.claude/skills && chown -R node:node /data /home/node /app
 USER node
+# Skills de vídeo do repositório (HyperFrames, motion, desenhado, dublagem...) para o planejador e o "Claude de Video.bat".
+COPY --chown=node:node skills /home/node/.claude/skills
+COPY --chown=node:node CLAUDE-VIDEOS.md /home/node/CLAUDE.md
 # `hyperframes browser ensure` trava no spinner sem TTY; instala a mesma versão fixada pelo @puppeteer/browsers.
 RUN node_modules/.bin/browsers install chrome-headless-shell@152.0.7977.30 --path /home/node/.cache/puppeteer > /dev/null \
- && (CI=1 timeout 300 node node_modules/hyperframes/dist/cli.js skills update talking-head-recut embedded-captions hyperframes-creative motion-graphics hyperframes-animation || echo "skills opcionais nao instaladas") \
+ && npm ci --prefix /home/node/.claude/skills/dublar-video --omit=dev && npm cache clean --force \
  && ln -s /home/node/.claude/skills /home/node/.claude-auth/skills
-ENV BIND=0.0.0.0 PORT=4317 STUDIO_DATA=/data CLAUDE_CONFIG_DIR=/home/node/.claude-auth STUDIO_BROWSER=/usr/bin/chromium HYPERFRAMES_TELEMETRY_DISABLED=1
+ENV BIND=0.0.0.0 PORT=4317 STUDIO_DATA=/data CLAUDE_CONFIG_DIR=/home/node/.claude-auth STUDIO_BROWSER=/usr/bin/chromium HYPERFRAMES_TELEMETRY_DISABLED=1 PATH=/app/node_modules/.bin:$PATH
 VOLUME ["/data", "/home/node/.claude-auth", "/home/node/.codex", "/home/node/.cache/hyperframes/whisper"]
 EXPOSE 4317
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s CMD node -e "fetch('http://127.0.0.1:4317/').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"

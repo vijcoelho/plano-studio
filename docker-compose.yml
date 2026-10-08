@@ -20,6 +20,8 @@ services:
       - claude-auth:/home/node/.claude-auth
       - codex-auth:/home/node/.codex
       - whisper-models:/home/node/.cache/hyperframes/whisper
+      # Pasta do Windows ao lado do .bat: projetos e MP4 feitos pelo "Claude de Video.bat".
+      - ./videos:/home/node/videos
 volumes:
   studio-data:
   claude-auth:

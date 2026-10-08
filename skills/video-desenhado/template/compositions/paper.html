@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+  <head><meta charset="UTF-8" /></head>
+  <body>
+    <template>
+      <style>
+        #root { position: absolute; inset: 0; overflow: hidden; background: #efe9dc; }
+        #p-outer, #p-inner, #p-world { position: absolute; inset: 0; transform-origin: 50% 50%; }
+        #p-paper { position: absolute; inset: 0; background: url("assets/paper.png") center / cover; }
+        #p-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 55%, rgba(80,60,40,.16) 100%); }
+        #p-ground { position: absolute; left: 0; top: 0; }
+        #p-clawd { position: absolute; left: 760px; top: 495px; width: 400px; height: 300px; }
+        #p-clawd-inner { width: 400px; height: 300px; transform-origin: 50% 90%; }
+        #p-bubble { position: absolute; left: 1080px; top: 70px; width: 680px; height: 420px; }
+        #p-bubble svg { position: absolute; left: 0; top: 0; overflow: visible; }
+        #p-cards { position: absolute; left: 110px; top: 95px; width: 470px; display: grid; grid-template-columns: 1fr 1fr; gap: 34px 30px; }
+        .p-card { display: flex; align-items: center; gap: 14px; height: 96px; padding: 0 20px; border: 3.5px solid #2a1d17; border-radius: 10px 14px 9px 12px;
+          font: 700 30px "Shantell Sans", sans-serif; font-variation-settings: "INFM" 70, "BNCE" 40; color: #2a1d17; box-shadow: 4px 5px 0 rgba(42,29,23,.18); will-change: transform, filter; }
+        .p-card svg { flex: none; }
+        .p-q { position: absolute; font: 700 130px "Caveat", cursive; color: #2a1d17; line-height: 1; width: 80px; text-align: center; }
+        #p-bang { position: absolute; left: 990px; top: 330px; width: 80px; font: 700 150px "Caveat", cursive; color: #b4532f; line-height: 1; text-align: center; }
+        #p-spark { position: absolute; left: 1360px; top: 190px; width: 480px; height: 480px; }
+        #p-spark svg { overflow: visible; }
+        #p-glow { position: absolute; left: 1470px; top: 300px; width: 260px; height: 260px; border-radius: 50%;
+          background: radial-gradient(circle, rgba(255,200,90,.75) 0%, rgba(255,190,80,.25) 40%, rgba(255,190,80,0) 70%); }
+        #p-dark { position: absolute; inset: 0; background: #0f1233; opacity: 0; }
+      </style>
+
+      <div id="root" data-composition-id="paper" data-width="1920" data-height="1080">
+        <div id="p-outer" data-layout-allow-overflow><div id="p-inner"><div id="p-world">
+          <div id="p-paper"></div>
+          <div id="p-vignette"></div>
+          <svg id="p-ground" width="1920" height="1080"><g class="p-ink" id="p-groundline"></g></svg>
+          <div id="p-glow"></div>
+          <div id="p-spark"><svg width="480" height="480" viewBox="0 0 480 480" id="p-spark-svg"></svg></div>
+          <div id="p-bubble">
+            <svg width="680" height="420" id="p-cloud"></svg>
+            <div id="p-cards">
+              <div class="p-card" style="background:#fbf8f0">
+                <svg width="34" height="42" viewBox="0 0 34 42"><path d="M3 3h19l9 9v27H3z" fill="#fff" stroke="#2a1d17" stroke-width="3" stroke-linejoin="round"/><path d="M9 20h16M9 27h12M9 33h14" stroke="#d97757" stroke-width="3" stroke-linecap="round"/></svg>auth.ts</div>
+              <div class="p-card" style="background:#f4d77a">
+                <svg width="38" height="38" viewBox="0 0 38 38"><ellipse cx="19" cy="9" rx="15" ry="6" fill="#fff8e0" stroke="#2a1d17" stroke-width="3"/><path d="M4 9v20c0 3.3 6.7 6 15 6s15-2.7 15-6V9" fill="none" stroke="#2a1d17" stroke-width="3"/></svg>Postgres</div>
+              <div class="p-card" style="background:#f2bba9">
+                <svg width="38" height="38" viewBox="0 0 38 38"><ellipse cx="19" cy="21" rx="10" ry="13" fill="#b4532f" stroke="#2a1d17" stroke-width="3"/><path d="M9 14l-6-4M29 14l6-4M8 22H2M30 22h6M9 30l-6 4M29 30l6 4" stroke="#2a1d17" stroke-width="3" stroke-linecap="round"/></svg>bug #42</div>
+              <div class="p-card" style="background:#bcd4e6">
+                <svg width="38" height="38" viewBox="0 0 38 38"><path d="M6 6h26v19H17l-8 7v-7H6z" fill="#fff" stroke="#2a1d17" stroke-width="3" stroke-linejoin="round"/></svg>pt-BR</div>
+            </div>
+          </div>
+          <div class="p-q" id="p-q1" style="left:850px;top:330px">?</div>
+          <div class="p-q" id="p-q2" style="left:935px;top:268px">?</div>
+          <div class="p-q" id="p-q3" style="left:1030px;top:320px">?</div>
+          <div id="p-bang">!</div>
+          <div id="p-clawd"><div id="p-clawd-inner"></div></div>
+        </div></div></div>
+        <div id="p-dark"></div>
+      </div>
+
+      <script>
+        (() => {
+          const S = window.Sketch, P = "p";
+          const root = document.querySelector('[data-composition-id="paper"]');
+          const $ = (s) => root.querySelector(s);
+          const style = document.createElement("style");
+          style.textContent = S.INK_CSS(P) + S.CLOUD_CSS(P);
+          root.appendChild(style);
+
+          $("#p-clawd-inner").innerHTML = S.mascot(P);
+          $("#p-groundline").innerHTML = S.boiled(P, [[S.line, [140, 762, 1780, 762, 1.2]]], 301);
+
+          // thought cloud: puffs pop one by one; small tail bubbles lead from the head
+          const puffs = [[150, 210, 112], [275, 125, 104], [415, 115, 110], [548, 190, 104], [505, 305, 96], [340, 322, 104], [180, 305, 92]];
+          const tails = [[40, 452, 13], [78, 405, 20]];
+          $("#p-cloud").innerHTML = tails.map(([x, y, r], i) =>
+            `<g id="p-tail${i + 1}"><g class="p-ink">${S.boiled(P, [[S.ellipse, [x, y, r, r, 1]]], 401 + i * 10)}</g><circle cx="${x}" cy="${y}" r="${r}" fill="#fbf7ee"/></g>`).join("") +
+            S.cloud(P, puffs, 421);
+
+          // little glowing graph on the paper
+          const C = [240, 240], nodes = [[120, 140], [370, 150], [350, 350], [140, 370], [250, 60]];
+          const edges = nodes.map((n) => [C, n]).concat([[nodes[0], nodes[4]], [nodes[1], nodes[2]]]);
+          $("#p-spark-svg").innerHTML =
+            `<g fill="none" stroke="#c98a22" stroke-width="4" stroke-linecap="round">` +
+            edges.map((e, i) => `<path class="p-edge" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" d="${S.line(...e[0], ...e[1], S.rng(500 + i), 1.4)}"/>`).join("") + `</g>` +
+            [C, ...nodes].map((n, i) => `<circle class="p-node" id="p-node${i}" cx="${n[0]}" cy="${n[1]}" r="${i ? 13 : 18}" fill="#ffc861" stroke="#2a1d17" stroke-width="3.5"/>`).join("");
+
+          const tl = gsap.timeline({ paused: true });
+          S.boil(tl, P, 0, 13);
+
+          // 0.2–~4.1 walk in (contact/passing poses, planted feet don't slide, lean + follow-through on the stop)
+          S.walk(tl, P, { sel: "#p-clawd", inner: "#p-clawd-inner", t0: 0.2, x0: -1000, dist: 1000, stride: 60, stepDur: 0.19 });
+
+          // 3.8–4.7 thought bubble with memories
+          S.pop(tl, "#p-tail1", 3.8, { response: 0.3 });
+          S.pop(tl, "#p-tail2", 3.9, { response: 0.3 });
+          S.popCloud(tl, P, puffs, 3.98, 0.05);
+          const cards = root.querySelectorAll(".p-card");
+          const rot = [-3, 2.5, 2, -2.5];
+          const cardSp = S.spring({ response: 0.42, damping: 0.6 });
+          cards.forEach((c, i) => tl.fromTo(c, { scale: 0, opacity: 0, rotation: rot[i] * 5 },
+            { scale: 1, opacity: 1, rotation: rot[i], duration: cardSp.duration, ease: cardSp.ease }, 4.15 + i * 0.13));
+          tl.to("#p-eyes", { x: 8, y: -6, duration: 0.3, ease: "power2.out" }, 4.35);
+          // blink while admiring the memories
+          tl.fromTo("#p-eyes", { scaleY: 1 }, { scaleY: 0.1, duration: 0.07, yoyo: true, repeat: 1, transformOrigin: "50% 50%", ease: "power1.in" }, 4.9);
+
+          // 5.3–7.6 memories flicker, then dissolve away
+          cards.forEach((c, i) => {
+            const t = 5.3 + i * 0.5;
+            tl.to(c, { opacity: 0.35, duration: 0.07, yoyo: true, repeat: 3, ease: "none" }, t - 0.3);
+            tl.to(c, { opacity: 0, y: -60, scale: 0.8, rotation: rot[i] * -5, filter: "blur(12px)", duration: 0.9, ease: "power2.in" }, t);
+          });
+          tl.to("#p-puffs, #p-tail1, #p-tail2", { opacity: 0, scale: 0.9, duration: 0.7, ease: "power2.in" }, 7.5);
+
+          // 7.4–9.4 confused
+          tl.to("#p-eyes", { x: -4, y: 2, duration: 0.3, ease: "power2.inOut" }, 7.3);
+          tl.to("#p-clawd-inner", { rotation: -7, duration: 0.5, ease: "sine.inOut" }, 7.6);
+          const qSp = S.spring({ response: 0.38, damping: 0.55 });
+          ["#p-q1", "#p-q2", "#p-q3"].forEach((q, i) => {
+            tl.fromTo(q, { scale: 0, opacity: 0, rotation: -30 + i * 20 }, { scale: 1, opacity: 1, rotation: -12 + i * 12, duration: qSp.duration, ease: qSp.ease }, 7.75 + i * 0.2);
+            tl.to(q, { y: -10, duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 2 }, 8.5 + i * 0.1);
+          });
+          tl.to("#p-armL, #p-armR", { y: -12, duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 }, 8.7);
+          tl.to("#p-q1, #p-q2, #p-q3", { opacity: 0, y: -40, duration: 0.4, ease: "power2.in" }, 9.7);
+
+          // 9.8–11.3 something glows on the right → a graph sketches itself
+          tl.fromTo("#p-glow", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "power3.out" }, 9.8);
+          tl.to("#p-glow", { scale: 1.15, duration: 0.6, ease: "sine.inOut", yoyo: true, repeat: 2 }, 10.4);
+          tl.fromTo("#p-spark", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 9.8);
+          S.pop(tl, "#p-node0", 9.85, { response: 0.4 });
+          tl.to("#p-clawd-inner", { rotation: 0, duration: 0.3, ease: "power2.out" }, 10.05);
+          tl.to("#p-eyes", { x: 10, y: -2, duration: 0.2, ease: "power3.out" }, 10.2);
+          S.surprise(tl, "#p-clawd-inner", 10.35); // double take: squash → stretch up → spring back
+          tl.fromTo("#p-bang", { scale: 0, opacity: 0, y: 30 }, { scale: 1, opacity: 1, y: 0, duration: qSp.duration, ease: qSp.ease }, 10.42);
+          tl.to("#p-bang", { opacity: 0, y: -20, duration: 0.25, ease: "power2.in" }, 11.3);
+          root.querySelectorAll(".p-edge").forEach((e, i) => tl.to(e, { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" }, 10.55 + i * 0.1));
+          for (let i = 1; i < 6; i++) S.pop(tl, `#p-node${i}`, 10.8 + i * 0.1, { response: 0.32 });
+          tl.to("#p-reflect", { opacity: 1, duration: 0.4 }, 10.9);
+
+          // 11.4–13 push into the right eye (coordinate-target-zoom: outer scale, inner counter-translate)
+          const EYE_X = 760 + 269 - 960, EYE_Y = 495 + 103 - 540;
+          tl.fromTo("#p-inner", { x: 0, y: 0 }, { x: -EYE_X, y: -EYE_Y, duration: 1.1, ease: "power2.inOut" }, 11.4);
+          tl.fromTo("#p-outer", { scale: 1 }, { scale: 60, duration: 1.6, ease: "expo.in" }, 11.4);
+          tl.to("#p-dark", { opacity: 1, duration: 0.4, ease: "power1.in" }, 12.6);
+
+          window.__timelines["paper"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
